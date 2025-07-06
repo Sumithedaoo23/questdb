@@ -1,0 +1,11 @@
+The cursorClosed() method was introduced to signal when a function’s associated cursor is closed, 
+ensuring timely resource cleanup. However, this callback is inconsistently triggered—it only applies 
+to virtual record cursors, not those used in operations like GROUP BY.
+
+As a result, functions like json_extract()—which allocate large memory buffers
+(1MB)—do not get notified when their cursors close in GROUP BY scenarios. This leads 
+to memory not being freed until the entire cursor factory is shut down. The problem is 
+especially critical in parallel queries where functions and memory buffers are cloned, potentially causing unnoticed memory leaks.
+
+A consistent invocation of cursorClosed() across all cursor types will ensure proper cleanup, 
+prevent resource leaks, and align with the intended lifecycle management of functions.
